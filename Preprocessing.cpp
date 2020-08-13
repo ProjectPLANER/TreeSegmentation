@@ -24,6 +24,7 @@ void Preprocessing::removeBoundary(cv::Mat& image)
     }
 }
 
+
 cv::Mat Preprocessing::createMask(cv::Mat& image, uint8_t t, uint8_t set)
 {
     cv::Mat mask = cv::Mat::ones(image.size(),image.type());
@@ -33,7 +34,7 @@ cv::Mat Preprocessing::createMask(cv::Mat& image, uint8_t t, uint8_t set)
         {
             if(image.at<uint8_t>(i,j) <= t)
             {
-                mask.at<uint8_t>(i,j) = set;
+                mask.at<uint8_t>(i,j) = 0;
             }
         }
     }
