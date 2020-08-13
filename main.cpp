@@ -2,6 +2,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include <iostream>
+#include "Segmentation.h"
 #include "Image.h"
 #include "Watershed.h"
 
@@ -19,7 +20,9 @@ int main(int, char**)
 	//cv::imshow("Disp",*image);
 	//cv::waitKey(0);
     //Image im("data/dem_full_easy.tif","data/boundary.geojson");
-    Watershed w(image);
-    w.applyWatershed();
+    //Watershed w(image);
+    //w.applyWatershed();
+	Segmentation s(image);
+	s.segment();
 	return 0;
 }

@@ -2,6 +2,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include "Watershed.h"
+#include "Preprocessing.h"
 #include <unordered_map>
 #include <iostream>
 
@@ -20,6 +21,8 @@ void Watershed::applyWatershed()
 {
     cv::Mat boundary = cv::Mat::zeros(image.size(),CV_8U);
 
+    
+
     for ( int i = 0; i < image.rows; i++ ) 
     {
         for ( int j = 0; j < image.cols; j++ ) 
@@ -33,6 +36,23 @@ void Watershed::applyWatershed()
         }
     }
 
+    cv::Mat normimgg;
+    cv::normalize(image, normimgg, 0, 255, cv::NORM_MINMAX);
+    normimgg.convertTo(normimgg,CV_8U);
+    Preprocessing p;
+    cv::Mat otsu;
+    cv::threshold(normimgg,otsu,0,255,cv::THRESH_BINARY | cv::THRESH_OTSU);
+    cv::imwrite("otsu.tif",otsu);
+
+    
+    //p.applyThreshold(image,0);
+    //cv::imwrite("otsu.tif",image);
+
+    double d;
+    double dd;
+    cv::minMaxLoc(image, &d, &dd);
+    std::cout << d << " " << dd << std::endl;
+ 
     /*std::unordered_map<float,int> umap;
     int count = 0;
     for ( int i = 0; i < image.rows; i++ ) 
@@ -98,6 +118,10 @@ void Watershed::applyWatershed()
     //cv::threshold(bw, bw, 40, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
     //cv::imshow("Binary Image", bw);
     //cv::waitKey(0);
+
+    //p.applyThreshold(bw,0);
+    //cv::imwrite("otsu.tif",bw);
+
     uint8_t max = 0;
     uint8_t min = 255;
     for ( int i = 0; i < bw.rows; i++ ) 
@@ -244,9 +268,8 @@ void Watershed::applyWatershed()
             
         }
     }
-    cv::imshow("red",imgResult);
-    cv::waitKey(0);
-    cv::imwrite("output.tif",imgResult);
+    //cv::imshow("red",imgResult);
+    //cv::imwrite("output.tif",imgResult);
     
 
     //cv::Mat mark;
@@ -354,6 +377,44 @@ std::vector<cv::Point> Watershed::bhFindLocalMaximum(cv::Mat& src){
     return bhContoursCenter(contours,true);
 }
 
+/*namespace cv
+{
+// A node represents a pixel to label
+struct WSNode
+{
+    int next;
+    int mask_ofs;
+    int img_ofs;
+};
+
+// Queue for WSNodes
+struct WSQueue
+{
+    WSQueue() { first = last = 0; }
+    int first, last;
+};
+
+
+static int
+allocWSNodes( std::vector<WSNode>& storage )
+{
+    int sz = (int)storage.size();
+    int newsz = MAX(128, sz*3/2);
+
+    storage.resize(newsz);
+    if( sz == 0 )
+    {
+        storage[0].next = 0;
+        sz = 1;
+    }
+    for( int i = sz; i < newsz-1; i++ )
+        storage[i].next = i+1;
+    storage[newsz-1].next = 0;
+    return sz;
+}
+
+}
+
 void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
 {
     //cv::CV_INSTRUMENT_REGION();
@@ -363,7 +424,7 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
     const int WSHED = -1; // Pixel belongs to watershed
 
     // possible bit values = 2^8
-    const int NQ = 4294967296;
+    const int64_t NQ = 4294967296;
 
     cv::Mat src = _src.getMat(), dst = _markers.getMat();
     cv::Size size = src.size();
@@ -373,13 +434,13 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
     int free_node = 0, node;
     // Priority queue of queues of nodes
     // from high priority (0) to low priority (255)
-    WSQueue q[NQ];
+    cv::WSQueue q[NQ];
     // Non-empty queue with highest priority
-    int active_queue;
-    int i, j;
+    int64_t active_queue;
+    int64_t i, j;
     // Color differences
-    int db, dg, dr;
-    int subs_tab[513];
+    int64_t db, dg, dr;
+    int64_t subs_tab[8589934593];
 
     // MAX(a,b) = b + MAX(a-b,0)
     #define ws_max(a,b) ((b) + subs_tab[(a)-(b)+NQ])
@@ -390,7 +451,7 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
     #define ws_push(idx,mofs,iofs)          \
     {                                       \
         if( !free_node )                    \
-            free_node = allocWSNodes( storage );\
+            free_node = cv::allocWSNodes( storage );\
         node = free_node;                   \
         free_node = storage[free_node].next;\
         storage[node].next = 0;             \
@@ -424,10 +485,10 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
         dr = std::abs((ptr1)[2] - (ptr2)[2]);\
         diff = ws_max(db,dg);                \
         diff = ws_max(diff,dr);              \
-        assert( 0 <= diff && diff <= 255 );  \
+        assert( 0 <= diff && diff <= 4294967295 );  \
     }
 
-    CV_Assert( src.type() == CV_8UC3 && dst.type() == CV_32SC1 );
+    CV_Assert( src.type() == CV_32SC3 && dst.type() == CV_32SC1 );
     CV_Assert( src.size() == dst.size() );
 
     // Current pixel in input image
@@ -440,10 +501,10 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
     // Step size to next row in mask image
     int mstep = int(dst.step / sizeof(mask[0]));
 
-    for( i = 0; i < 256; i++ )
+    for( i = 0; i < 4294967296; i++ )
         subs_tab[i] = 0;
-    for( i = 256; i <= 512; i++ )
-        subs_tab[i] = i - 256;
+    for( i = 4294967296; i <= 8589934592; i++ )
+        subs_tab[i] = i - 4294967296;
 
     // draw a pixel-wide border of dummy "watershed" (i.e. boundary) pixels
     for( j = 0; j < size.width; j++ )
@@ -484,8 +545,8 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
                 }
 
                 // Add to according queue
-                assert( 0 <= idx && idx <= 255 );
-                //ws_push( idx, i*mstep + j, i*istep + j*3 );
+                assert( 0 <= idx && idx <= 4294967295 );
+                ws_push( idx, i*mstep + j, i*istep + j*3 );
                 m[0] = IN_QUEUE;
             }
         }
@@ -565,30 +626,30 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
         if( m[-1] == 0 )
         {
             c_diff( ptr, ptr - 3, t );
-            //ws_push( t, mofs - 1, iofs - 3 );
+            ws_push( t, mofs - 1, iofs - 3 );
             active_queue = ws_min( active_queue, t );
             m[-1] = IN_QUEUE;
         }
         if( m[1] == 0 )
         {
             c_diff( ptr, ptr + 3, t );
-            //ws_push( t, mofs + 1, iofs + 3 );
+            ws_push( t, mofs + 1, iofs + 3 );
             active_queue = ws_min( active_queue, t );
             m[1] = IN_QUEUE;
         }
         if( m[-mstep] == 0 )
         {
             c_diff( ptr, ptr - istep, t );
-            //ws_push( t, mofs - mstep, iofs - istep );
+            ws_push( t, mofs - mstep, iofs - istep );
             active_queue = ws_min( active_queue, t );
             m[-mstep] = IN_QUEUE;
         }
         if( m[mstep] == 0 )
         {
             c_diff( ptr, ptr + istep, t );
-            //ws_push( t, mofs + mstep, iofs + istep );
+            ws_push( t, mofs + mstep, iofs + istep );
             active_queue = ws_min( active_queue, t );
             m[mstep] = IN_QUEUE;
         }
     }
-}
+}*/

@@ -25,13 +25,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 10,
+				"line" : 9,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 12,
+				"line" : 11,
 				"parent" : 0
 			}
 		]
@@ -58,7 +58,9 @@
 			[
 				0,
 				1,
-				2
+				2,
+				3,
+				4
 			]
 		}
 	],
@@ -125,10 +127,6 @@
 				"role" : "libraries"
 			},
 			{
-				"fragment" : "-ljsoncpp",
-				"role" : "libraries"
-			},
-			{
 				"backtrace" : 2,
 				"fragment" : "/usr/local/lib/libopencv_imgcodecs.so.4.4.0",
 				"role" : "libraries"
@@ -176,7 +174,9 @@
 			[
 				0,
 				1,
-				2
+				2,
+				3,
+				4
 			]
 		}
 	],
@@ -192,6 +192,18 @@
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
 			"path" : "Image.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "Preprocessing.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "Segmentation.cpp",
 			"sourceGroupIndex" : 0
 		},
 		{
