@@ -2,23 +2,45 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include "Preprocessing.h"
+#include <cmath>
 #include <iostream>
 
 Preprocessing::Preprocessing() {}
 Preprocessing::~Preprocessing() {}
 
-void Preprocessing::removeBoundary(cv::Mat& image)
+void Preprocessing::regulateImage(cv::Mat& image, int num)
 {
-    double min;
-    double max;
-    cv::minMaxLoc(image, &min, &max);
+    image = image + abs(num);
+}
+
+void Preprocessing::removeBoundary(cv::Mat& image, int min)
+{
+    if (min < 0)
+    {
+        regulateImage(image,min);
+    }
+    
     for ( int i = 0; i < image.rows; i++ ) 
     {
         for ( int j = 0; j < image.cols; j++ )
         {
-            if(image.at<float>(i,j) < 0)
+            if(image.at<float>(i,j) < min) // < 0
             {
-                image.at<float>(i,j) = 16.5745;
+                image.at<float>(i,j) = min-1; //16.5745
+            }
+        }
+    }
+}
+
+void Preprocessing::removeBoundary(cv::Mat& image, int t, int set)
+{
+    for ( int i = 0; i < image.rows; i++ ) 
+    {
+        for ( int j = 0; j < image.cols; j++ )
+        {
+            if(image.at<float>(i,j) < t)
+            {
+                image.at<float>(i,j) = set;
             }
         }
     }
@@ -72,15 +94,10 @@ cv::Mat Preprocessing::applyDistanceTranform(cv::Mat& image)
 cv::Mat Preprocessing::findLocalMax(cv::Mat& image)
 {
     cv::Mat max;
-    cv::dilate(image, max, cv::getStructuringElement(cv::MORPH_RECT, cv::Size (30, 30)));
-    //cv::imwrite("max.tif",max);
-    //cv::Mat imgResult;
-    //imgResult.create(image.rows, image.cols, image.type());
-    //image.copyTo(imgResult, cv::compare(image, max, cv::CMP_GE);
+    cv::dilate(image, max, cv::getStructuringElement(cv::MORPH_RECT, cv::Size (25, 25))); //30x30
     cv::Mat res;
     cv::compare(image, max, res,cv::CMP_GE);
     
     cv::imwrite("max.tif",res);
     return res;
 }
-

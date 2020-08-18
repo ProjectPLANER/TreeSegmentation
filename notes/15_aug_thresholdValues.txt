@@ -1,0 +1,7 @@
+15 August 2020
+==============
+
+I have accidentally used the threshold values that I would normally apply to the hard case on the easy case.
+The results seem... better?
+One of the major differences was that the threshold limit is 19, but was 0 in the easy case.
+This would mean that some tree areas may be removed. But the result has a much better clarity. The as the trees are thinner, it opens gaps to allow the ground to fill up as a single basin.

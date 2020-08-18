@@ -21,7 +21,6 @@ void Watershed::applyWatershed()
 {
     cv::Mat boundary = cv::Mat::zeros(image.size(),CV_8U);
 
-    
 
     for ( int i = 0; i < image.rows; i++ ) 
     {
@@ -275,7 +274,7 @@ void Watershed::applyWatershed()
     //cv::Mat mark;
     //markers.convertTo(mark, CV_8U);
     //cv::bitwise_not(mark, mark);
-    //    imshow("Markers_v2", mark); // uncomment this if you want to see how the mark
+    //    imshow("Markers_v2", mark);
     // image looks like at that point
     // Generate random colors
     std::vector<cv::Vec3b> colors;
@@ -377,47 +376,9 @@ std::vector<cv::Point> Watershed::bhFindLocalMaximum(cv::Mat& src){
     return bhContoursCenter(contours,true);
 }
 
-/*namespace cv
+void Watershed::water( cv::Mat& src, cv::Mat& markers ) //CV_32S,CV_32S
 {
-// A node represents a pixel to label
-struct WSNode
-{
-    int next;
-    int mask_ofs;
-    int img_ofs;
-};
-
-// Queue for WSNodes
-struct WSQueue
-{
-    WSQueue() { first = last = 0; }
-    int first, last;
-};
-
-
-static int
-allocWSNodes( std::vector<WSNode>& storage )
-{
-    int sz = (int)storage.size();
-    int newsz = MAX(128, sz*3/2);
-
-    storage.resize(newsz);
-    if( sz == 0 )
-    {
-        storage[0].next = 0;
-        sz = 1;
-    }
-    for( int i = sz; i < newsz-1; i++ )
-        storage[i].next = i+1;
-    storage[newsz-1].next = 0;
-    return sz;
-}
-
-}
-
-void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
-{
-    //cv::CV_INSTRUMENT_REGION();
+    //CV_INSTRUMENT_REGION();
 
     // Labels for pixels
     const int IN_QUEUE = -2; // Pixel visited
@@ -426,21 +387,21 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
     // possible bit values = 2^8
     const int64_t NQ = 4294967296;
 
-    cv::Mat src = _src.getMat(), dst = _markers.getMat();
+    cv::Mat dst = markers.clone();
     cv::Size size = src.size();
 
     // Vector of every created node
     std::vector<WSNode> storage;
     int free_node = 0, node;
     // Priority queue of queues of nodes
-    // from high priority (0) to low priority (255)
-    cv::WSQueue q[NQ];
+    // from high priority (0) to low priority (255) //4294967295
+    WSQueue q[NQ];
     // Non-empty queue with highest priority
-    int64_t active_queue;
+    int active_queue;
     int64_t i, j;
     // Color differences
-    int64_t db, dg, dr;
-    int64_t subs_tab[8589934593];
+    int db, dg, dr;
+    int subs_tab[8589934593];
 
     // MAX(a,b) = b + MAX(a-b,0)
     #define ws_max(a,b) ((b) + subs_tab[(a)-(b)+NQ])
@@ -451,7 +412,7 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
     #define ws_push(idx,mofs,iofs)          \
     {                                       \
         if( !free_node )                    \
-            free_node = cv::allocWSNodes( storage );\
+            free_node = allocWSNodes( storage );\
         node = free_node;                   \
         free_node = storage[free_node].next;\
         storage[node].next = 0;             \
@@ -488,7 +449,7 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
         assert( 0 <= diff && diff <= 4294967295 );  \
     }
 
-    CV_Assert( src.type() == CV_32SC3 && dst.type() == CV_32SC1 );
+    //CV_Assert( src.type() == CV_8UC3 && dst.type() == CV_32SC1 );
     CV_Assert( src.size() == dst.size() );
 
     // Current pixel in input image
@@ -545,7 +506,7 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
                 }
 
                 // Add to according queue
-                assert( 0 <= idx && idx <= 4294967295 );
+                assert( 0 <= idx && idx <= 255 );
                 ws_push( idx, i*mstep + j, i*istep + j*3 );
                 m[0] = IN_QUEUE;
             }
@@ -652,4 +613,5 @@ void Watershed::water(cv::InputArray _src, cv::InputOutputArray _markers)
             m[mstep] = IN_QUEUE;
         }
     }
-}*/
+}
+

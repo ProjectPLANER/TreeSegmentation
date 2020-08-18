@@ -1,6 +1,7 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
+#include <string>
 #include <iostream>
 #include "Segmentation.h"
 #include "Image.h"
@@ -8,21 +9,18 @@
 
 int main(int, char**) 
 {
+	std::string file = "trim_easy";
+	//std::string file = "trim_medium";
     cv::Mat image ;
-    //image = cv::imread("data/dem_full_easy.tif",cv::IMREAD_GRAYSCALE | cv::IMREAD_ANYDEPTH);
-    image = cv::imread("data/trim.tif",cv::IMREAD_UNCHANGED);
-	/*if(!image.data)
+    image = cv::imread("data/"+file+".tif",cv::IMREAD_UNCHANGED);
+	if(!image.data)
 	{
 		std::cout << "Error: Could not open or locate the file." << std::endl;
         return -1;
-	}*/
-	//cv::namedWindow("Disp",cv::WINDOW_AUTOSIZE);
-	//cv::imshow("Disp",*image);
-	//cv::waitKey(0);
-    //Image im("data/dem_full_easy.tif","data/boundary.geojson");
+	}
     //Watershed w(image);
     //w.applyWatershed();
-	Segmentation s(image);
+	Segmentation s(image,file);
 	s.segment();
 	return 0;
 }
