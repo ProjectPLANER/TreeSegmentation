@@ -71,7 +71,7 @@ ValgrindCommand:
 ValgrindCommandOptions: 
 MemoryCheckType: 
 MemoryCheckSanitizerOptions: 
-MemoryCheckCommand: /usr/bin/valgrind
+MemoryCheckCommand: MEMORYCHECK_COMMAND-NOTFOUND
 MemoryCheckCommandOptions: 
 MemoryCheckSuppressionFile: 
 

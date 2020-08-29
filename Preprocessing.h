@@ -23,6 +23,8 @@ class Preprocessing
         cv::Mat applyThreshold(cv::Mat& image, int t, int max);
         cv::Mat applyDistanceTranform(cv::Mat& image);
         cv::Mat findLocalMax(cv::Mat& image);
+        void floodFillUtil(cv::Mat& image, int x, int y, int prevC, int newC);
+        void floodFill(cv::Mat& image, int x, int y, int newC);
 };
 
 #endif

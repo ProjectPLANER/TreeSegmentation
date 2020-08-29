@@ -101,3 +101,33 @@ cv::Mat Preprocessing::findLocalMax(cv::Mat& image)
     cv::imwrite("max.tif",res);
     return res;
 }
+
+// A recursive function to replace previous color 'prevC' at  '(x, y)'  
+// and all surrounding pixels of (x, y) with new color 'newC' and 
+void Preprocessing::floodFillUtil(cv::Mat& image, int x, int y, int prevC, int newC) 
+{ 
+    // Base cases 
+    if (x < 0 || x >= image.rows || y < 0 || y >= image.cols) 
+        return; 
+    if (image.at<int32_t>(x,y) != prevC) 
+        return; 
+    if (image.at<int32_t>(x,y) == newC)  
+        return;  
+  
+    // Replace the color at (x, y) 
+    image.at<int32_t>(x,y) = newC; 
+  
+    // Recur for north, east, south and west 
+    floodFillUtil(image, x+1, y, prevC, newC); 
+    floodFillUtil(image, x-1, y, prevC, newC); 
+    floodFillUtil(image, x, y+1, prevC, newC); 
+    floodFillUtil(image, x, y-1, prevC, newC); 
+} 
+  
+// It mainly finds the previous color on (x, y) and 
+// calls floodFillUtil() 
+void Preprocessing::floodFill(cv::Mat& image, int x, int y, int newC) 
+{ 
+    int prevC = image.at<int32_t>(x,y); 
+    floodFillUtil(image, x, y, prevC, newC); 
+}

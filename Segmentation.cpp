@@ -1,5 +1,6 @@
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
+#include "opencv2/ximgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include "Preprocessing.h"
 #include "Watershed.h"
@@ -16,13 +17,14 @@ Segmentation::Segmentation(cv::Mat& image, std::string file)
 Segmentation::~Segmentation() {}
 
 void Segmentation::segment()
-{
+{   
+    
     Preprocessing p;
     cv::Mat mask = p.applyThreshold(image,0,1); //easy: (image,0,1); medium:(image,-2,1); hard:(image,19,1)
     mask.convertTo(mask,CV_8U);
     //p.removeBoundary(image,19,0);
     std::cout << "Mask image created..." << std::endl;
-    p.removeBoundary(image,16);
+    p.removeBoundary(image,-2);
     std::cout << "Boundary removed..." << std::endl;
     //hard
     /*for (size_t i = 0; i < image.rows; i++)
@@ -54,6 +56,87 @@ void Segmentation::segment()
     //cv::Mat thresh = p.applyThreshold(image_8U);
     //cv::imwrite("thresh.tif",thresh);
 
+    cv::Mat slicmask, result;
+    int min_element_size = 25;
+    cv::Ptr<cv::ximgproc::SuperpixelSLIC> slic = cv::ximgproc::createSuperpixelSLIC(image,cv::ximgproc::SLICO,30,10);
+    slic->iterate();
+        //if (min_element_size>0)
+            //slic->enforceLabelConnectivity(min_element_size);
+
+        // get the contours for displaying
+    slic->getLabelContourMask(slicmask, false);
+    cv::Mat ming = cv::Mat::zeros(image_8U.size(),CV_32S);
+    std::cout << slic->getNumberOfSuperpixels() << std::endl;
+    slic->getLabels(ming);
+    
+    //cv::imshow("Final Result",ming);
+
+    cv::Mat slicOut = image_8U;
+    cv::cvtColor(image_8U,slicOut,cv::COLOR_GRAY2RGB);
+    for (size_t i = 0; i < slicmask.rows; i++)
+    {
+        for (size_t j = 0; j < slicmask.cols; j++)
+        {
+            if(slicmask.at<int8_t>(i,j) < 0)
+            {
+                slicOut.at<cv::Vec3b>(i,j)[0] = 0;
+                slicOut.at<cv::Vec3b>(i,j)[1] = 0;
+                slicOut.at<cv::Vec3b>(i,j)[2] = 255;
+            }
+        }
+    } 
+    cv::bitwise_not(slicmask,slicmask);
+    
+    for (size_t i = 0; i < mask.rows; i++)
+    {
+        for (size_t j = 0; j < mask.cols; j++)
+        {
+            if (mask.at<uint8_t>(i,j) == 0)
+            {
+                slicmask.at<uint8_t>(i,j) = 0;
+            }
+        }
+    }
+    cv::erode(slicmask, slicmask, cv::Mat());
+    
+    std::vector<std::vector<cv::Point>> slicContours;
+    cv::findContours(slicmask,slicContours,cv::RETR_LIST,cv::CHAIN_APPROX_NONE);
+    cv::Mat slicMarkers = cv::Mat::zeros(slicmask.size(), CV_32S);
+
+    for (size_t i = 0; i < slicContours.size(); i++)
+    {
+        //unsigned char R = ((i+1) & 0xff);
+        //unsigned char G = ((i+1) & 0xff00) >> 8;
+        //unsigned char B = ((i+1) & 0xff0000) >> 16;
+        drawContours(slicMarkers, slicContours, static_cast<int>(i), cv::Scalar(static_cast<int>(i)+1), -1);
+        //drawContours(slicMarkers, slicContours, i, cv::Scalar(R,G,B,255), -1);
+        //cv::drawContours(slicMarkers,slicContours,i,cv::Scalar(i+1));
+
+        
+    }
+    //cv::imwrite("ming.tif",slicMarkers);
+    //cv::circle(slicMarkers, cv::Point(5,5), 3, cv::Scalar(255), -1);
+    //std::vector<int> slicColours;
+    //for (int i = 1; i < slicContours.size(); i++)
+    //{
+    //   slicColours.push_back(i);
+    //}
+    //for (int i = 0; i < slicMarkers.rows; i++)
+    //{
+    //    for (int j = 0; j < slicMarkers.cols; j++)
+    //    {
+    //        int index = slicmask.at<int>(i,j);
+    //        if (index > 0 && index <= static_cast<int>(slicContours.size()))
+    //        {
+    //            slicMarkers.at<int>(i,j) = slicColours[index-1];
+    //        }
+    //    }
+    //}
+    cv::imwrite("slic.tif",slicMarkers);
+
+
+
+
     cv::Mat image_8UC3;
     cv::cvtColor(image_8U,image_8UC3,cv::COLOR_GRAY2RGB);
     std::cout << "DEM cleaned-up..." << std::endl;
@@ -71,6 +154,28 @@ void Segmentation::segment()
     cv::circle(markers, cv::Point(5,5), 3, cv::Scalar(255), -1);
     std::cout << "Contours calculated..." << std::endl;
 
+    //cv::Mat markers;
+    //localMax.convertTo(markers,CV_32S);
+    //experiment
+    //int curr = 256;
+    //for (int i = 0; i < localMax.rows; i++)
+    //{
+    //    for (int j = 0; j < localMax.cols; j++)
+    //    {
+    //        if (localMax.at<uint8_t>(i,j) == 255)
+    //        {
+    //            p.floodFill(markers,i,j,curr);
+    //            curr++;
+    //        }
+    //        
+    //    }
+    //}
+    
+
+    //experiment
+
+
+    cv::imwrite("markers.tif",markers);
     cv::watershed(image_8UC3,markers);
     //cv::Mat image_32SC3;
     //cv::normalize(image, image_32SC3, 0, 2147483647, cv::NORM_MINMAX);
@@ -112,7 +217,7 @@ void Segmentation::segment()
     }
     cv::imwrite("output/"+file+"_watershedBasins.tif",dst);
     // Visualize the final image
-    display(image_8UC3,markers,localMax);
+    display(image_8UC3,markers,slicMarkers,localMax);
     cv::namedWindow("Final Result",cv::WINDOW_NORMAL);
     cv::resizeWindow("Final Result", 1920,1080);
     cv::imshow("Final Result", dst);
@@ -130,12 +235,18 @@ void Segmentation::segment()
     cv::imwrite("dist.tif",dist_otsu);*/
 }
 
-void Segmentation::display(cv::Mat& image,cv::Mat& boundaries,cv::Mat& localMax)
+void Segmentation::display(cv::Mat& image,cv::Mat& boundaries,cv::Mat& slicBoundaries,cv::Mat& localMax)
 {
     for (size_t i = 0; i < image.rows; i++)
     {
         for (size_t j = 0; j < image.cols; j++)
         {
+            if (slicBoundaries.at<int32_t>(i,j) < 1)
+            {
+                image.at<cv::Vec3b>(i,j)[0] = 0;
+                image.at<cv::Vec3b>(i,j)[1] = 255;
+                image.at<cv::Vec3b>(i,j)[2] = 0;
+            }
             if (boundaries.at<int32_t>(i,j) <= 1)
             {
                 image.at<cv::Vec3b>(i,j)[0] = 0;
@@ -143,12 +254,13 @@ void Segmentation::display(cv::Mat& image,cv::Mat& boundaries,cv::Mat& localMax)
                 image.at<cv::Vec3b>(i,j)[2] = 255;
             }
             //std::cout << localMax.at<int8_t>(i,j) << std::endl;
-            if (localMax.at<int8_t>(i,j) != 0)
+            if (localMax.at<uint8_t>(i,j) != 0)
             {
                 image.at<cv::Vec3b>(i,j)[0] = 0;
                 image.at<cv::Vec3b>(i,j)[1] = 255;
                 image.at<cv::Vec3b>(i,j)[2] = 255;
             }
+            
         } 
     }
     cv::imwrite("output/"+file+"_boundaries.tif",image);
