@@ -25,6 +25,9 @@ class Preprocessing
         cv::Mat findLocalMax(cv::Mat& image);
         void floodFillUtil(cv::Mat& image, int x, int y, int prevC, int newC);
         void floodFill(cv::Mat& image, int x, int y, int newC);
+        float variance(std::vector<uint8_t>);
+        uint8_t getMax(std::vector<uint8_t>);
+        cv::Point getMaxPosition(std::vector<uint8_t>,std::vector<cv::Point>);
 };
 
 #endif

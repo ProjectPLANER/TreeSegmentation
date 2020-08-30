@@ -131,3 +131,48 @@ void Preprocessing::floodFill(cv::Mat& image, int x, int y, int newC)
     int prevC = image.at<int32_t>(x,y); 
     floodFillUtil(image, x, y, prevC, newC); 
 }
+
+float Preprocessing::variance(std::vector<uint8_t> cell)
+{
+    float mean = 0;
+    for (size_t i = 0; i < cell.size(); i++)
+    {
+        mean += cell[i];
+    }
+    mean /= cell.size();
+    
+    float var = 0;
+    for(int i = 0; i < cell.size(); i++ )
+    {
+        var += (cell[i] - mean) * (cell[i] - mean);
+    }
+    var /= (cell.size()-1);
+    return var;
+}
+
+uint8_t Preprocessing::getMax(std::vector<uint8_t> cell)
+{
+    uint8_t max = 0;
+    for (size_t i = 0; i < cell.size(); i++)
+    {
+        if(max < cell[i])
+            max = cell[i];
+    }
+    return max;
+}
+
+cv::Point Preprocessing::getMaxPosition(std::vector<uint8_t> val,std::vector<cv::Point> coord)
+{
+    uint8_t max = 0;
+    cv::Point maxPos;
+    for (size_t i = 0; i < val.size(); i++)
+    {
+        if(max < val[i])
+        {
+            max = val[i];
+            maxPos = coord[i];
+        }
+            
+    }
+    return maxPos;
+}

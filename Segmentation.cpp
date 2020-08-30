@@ -5,6 +5,7 @@
 #include "Preprocessing.h"
 #include "Watershed.h"
 #include "Segmentation.h"
+#include <set>
 #include <iostream>
 
 
@@ -20,11 +21,11 @@ void Segmentation::segment()
 {   
     
     Preprocessing p;
-    cv::Mat mask = p.applyThreshold(image,0,1); //easy: (image,0,1); medium:(image,-2,1); hard:(image,19,1)
+    cv::Mat mask = p.applyThreshold(image,-2,1); //easy: (image,0,1); medium:(image,-2,1); hard:(image,19,1)
     mask.convertTo(mask,CV_8U);
     //p.removeBoundary(image,19,0);
     std::cout << "Mask image created..." << std::endl;
-    p.removeBoundary(image,-2);
+    p.removeBoundary(image,-2); //16 for easy
     std::cout << "Boundary removed..." << std::endl;
     //hard
     /*for (size_t i = 0; i < image.rows; i++)
@@ -68,8 +69,7 @@ void Segmentation::segment()
     cv::Mat ming = cv::Mat::zeros(image_8U.size(),CV_32S);
     std::cout << slic->getNumberOfSuperpixels() << std::endl;
     slic->getLabels(ming);
-    
-    //cv::imshow("Final Result",ming);
+
 
     cv::Mat slicOut = image_8U;
     cv::cvtColor(image_8U,slicOut,cv::COLOR_GRAY2RGB);
@@ -135,7 +135,35 @@ void Segmentation::segment()
     cv::imwrite("slic.tif",slicMarkers);
 
 
+    std::set<int32_t> cells;
+    std::vector<uint8_t> mapping[slic->getNumberOfSuperpixels()];
+    std::vector<cv::Point> coord[slic->getNumberOfSuperpixels()];
 
+    for (size_t i = 0; i < localMax.rows; i++)
+    {
+        for (size_t j = 0; j < localMax.cols; j++)
+        {
+            mapping[ming.at<int32_t>(i,j)].push_back(image_8U.at<uint8_t>(i,j));
+            coord[ming.at<int32_t>(i,j)].push_back(cv::Point(i,j));
+            if(localMax.at<uint8_t>(i,j) == 255)
+            {
+                cells.insert(ming.at<int32_t>(i,j));
+            }       
+        }
+    }
+
+    for (int i = 0; i < slic->getNumberOfSuperpixels(); i++)
+    {
+        if (cells.find(i) == cells.end())
+        {
+            float var = p.variance(mapping[i]);
+            if (var > 30)
+            {
+                cv::Point maxPos = p.getMaxPosition(mapping[i],coord[i]);
+                localMax.at<uint8_t>(maxPos.x,maxPos.y) = 255;
+            }          
+        }
+    }
 
     cv::Mat image_8UC3;
     cv::cvtColor(image_8U,image_8UC3,cv::COLOR_GRAY2RGB);
@@ -154,29 +182,40 @@ void Segmentation::segment()
     cv::circle(markers, cv::Point(5,5), 3, cv::Scalar(255), -1);
     std::cout << "Contours calculated..." << std::endl;
 
-    //cv::Mat markers;
-    //localMax.convertTo(markers,CV_32S);
-    //experiment
-    //int curr = 256;
-    //for (int i = 0; i < localMax.rows; i++)
-    //{
-    //    for (int j = 0; j < localMax.cols; j++)
-    //    {
-    //        if (localMax.at<uint8_t>(i,j) == 255)
-    //        {
-    //            p.floodFill(markers,i,j,curr);
-    //            curr++;
-    //        }
-    //        
-    //    }
-    //}
     
 
-    //experiment
+    
+    
 
+    cv::Mat testMask = cv::Mat::zeros(ming.size(),CV_8U);
+    for (size_t i = 0; i < testMask.rows; i++)
+    {
+        for (size_t j = 0; j < testMask.cols; j++)
+        {
+            if(cells.find(ming.at<int32_t>(i,j)) != cells.end())
+            {
+                testMask.at<uint8_t>(i,j) = 255;
+            }
+        }
+    }
+    cv::imwrite("testSlicMask.tif",testMask);
+
+    cv::Mat newImg = image_8UC3.clone();
+    for (size_t i = 0; i < newImg.rows; i++)
+    {
+        for (size_t j = 0; j < newImg.cols; j++)
+        {
+            if (testMask.at<uint8_t>(i,j) == 0)
+            {
+                newImg.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
+            } 
+        }
+    }
+    
+    
 
     cv::imwrite("markers.tif",markers);
-    cv::watershed(image_8UC3,markers);
+    cv::watershed(newImg,markers); //image_8UC3
     //cv::Mat image_32SC3;
     //cv::normalize(image, image_32SC3, 0, 2147483647, cv::NORM_MINMAX);
     //cv::cvtColor(image_32SC3, image_32SC3, cv::COLOR_GRAY2RGB);

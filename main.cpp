@@ -9,8 +9,8 @@
 
 int main(int, char**) 
 {
-	std::string file = "trim_easy";
-	//std::string file = "trim_medium";
+	//std::string file = "trim_easy";
+	std::string file = "trim_medium";
 	//std::string file = "simpleHill4";
     cv::Mat image ;
     image = cv::imread("data/"+file+".tif",cv::IMREAD_UNCHANGED);
