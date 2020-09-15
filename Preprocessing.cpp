@@ -70,6 +70,13 @@ cv::Mat Preprocessing::applyFilter(cv::Mat& image)
     return imageFiltered;
 }
 
+cv::Mat Preprocessing::applyFilterGausian(cv::Mat& image)
+{
+    cv::Mat imageFiltered;
+    cv::GaussianBlur(image,imageFiltered,cv::Size(5,5),2);
+    return imageFiltered;
+}
+
 cv::Mat Preprocessing::applyThreshold(cv::Mat& image)
 {
     cv::Mat imageThresh;
@@ -94,7 +101,7 @@ cv::Mat Preprocessing::applyDistanceTranform(cv::Mat& image)
 cv::Mat Preprocessing::findLocalMax(cv::Mat& image)
 {
     cv::Mat max;
-    cv::dilate(image, max, cv::getStructuringElement(cv::MORPH_RECT, cv::Size (25, 25))); //30x30
+    cv::dilate(image, max, cv::getStructuringElement(cv::MORPH_RECT, cv::Size (28, 28))); //30x30 //25
     cv::Mat res;
     cv::compare(image, max, res,cv::CMP_GE);
     
@@ -130,6 +137,37 @@ void Preprocessing::floodFill(cv::Mat& image, int x, int y, int newC)
 { 
     int prevC = image.at<int32_t>(x,y); 
     floodFillUtil(image, x, y, prevC, newC); 
+}
+
+void Preprocessing::regionGrowUtil(cv::Mat& image, int x, int y, uint8_t prevC, uint8_t newC) 
+{ 
+    // Base cases 
+    if (x < 0 || x >= image.rows || y < 0 || y >= image.cols) 
+        return; 
+    if (image.at<uint8_t>(x,y) == newC)  
+        return;
+    uint8_t xx = image.at<uint8_t>(x,y);
+    uint8_t prev = prevC;
+    if ((prevC - image.at<uint8_t>(x,y)) > 30) //>15
+        return; 
+      
+  
+    // Replace the color at (x, y) 
+    image.at<uint8_t>(x,y) = newC; 
+  
+    // Recur for north, east, south and west 
+    regionGrowUtil(image, x+1, y, prevC, newC); 
+    regionGrowUtil(image, x-1, y, prevC, newC); 
+    regionGrowUtil(image, x, y+1, prevC, newC); 
+    regionGrowUtil(image, x, y-1, prevC, newC); 
+} 
+  
+// It mainly finds the previous color on (x, y) and 
+// calls floodFillUtil() 
+void Preprocessing::regionGrow(cv::Mat& image, int x, int y, uint8_t newC) 
+{ 
+    uint8_t prevC = image.at<uint8_t>(x,y); 
+    regionGrowUtil(image, x, y, prevC, newC); 
 }
 
 float Preprocessing::variance(std::vector<uint8_t> cell)
@@ -175,4 +213,68 @@ cv::Point Preprocessing::getMaxPosition(std::vector<uint8_t> val,std::vector<cv:
             
     }
     return maxPos;
+}
+
+cv::Mat Preprocessing::findEdges(cv::Mat& image)
+{
+    cv::Mat image1 = image.clone();
+    image1.convertTo(image1,CV_16SC1);
+    cv::Mat image2 = image1.clone();
+    cv::Mat edges = cv::Mat::zeros(image.size(),CV_8UC1);
+
+    cv::Canny(image1,image2,edges,45,50,true);
+    return edges;
+}
+
+void Preprocessing::findNeighbours(cv::Mat& image, std::vector<int>* neighbours)
+{
+    for (size_t i = 1; i < image.rows-1; i++)
+    {
+        for (size_t j = 1; j < image.cols-1; j++)
+        {
+            if(image.at<int32_t>(i-1,j) != image.at<int32_t>(i,j))
+                neighbours[image.at<int32_t>(i,j)].push_back(image.at<int32_t>(i-1,j));
+            if(image.at<int32_t>(i+1,j) != image.at<int32_t>(i,j))
+                neighbours[image.at<int32_t>(i,j)].push_back(image.at<int32_t>(i+1,j));
+            if(image.at<int32_t>(i,j-1) != image.at<int32_t>(i,j))
+                neighbours[image.at<int32_t>(i,j)].push_back(image.at<int32_t>(i,j-1));
+            if(image.at<int32_t>(i,j+1) != image.at<int32_t>(i,j))
+                neighbours[image.at<int32_t>(i,j)].push_back(image.at<int32_t>(i,j+1));
+            if(image.at<int32_t>(i-1,j-1) != image.at<int32_t>(i,j))
+                neighbours[image.at<int32_t>(i,j)].push_back(image.at<int32_t>(i-1,j-1));
+            if(image.at<int32_t>(i+1,j-1) != image.at<int32_t>(i,j))
+                neighbours[image.at<int32_t>(i,j)].push_back(image.at<int32_t>(i+1,j-1));
+            if(image.at<int32_t>(i-1,j+1) != image.at<int32_t>(i,j))
+                neighbours[image.at<int32_t>(i,j)].push_back(image.at<int32_t>(i-1,j+1));
+            if(image.at<int32_t>(i+1,j+1) != image.at<int32_t>(i,j))
+                neighbours[image.at<int32_t>(i,j)].push_back(image.at<int32_t>(i+1,j+1));          
+        }      
+    }
+}
+
+void Preprocessing::sortCells(cv::Mat& image, std::vector<cv::Point>* cells)
+{
+
+    for (int i = 0; i < image.rows; i++)
+    {
+        for (int j = 0; j < image.cols; j++)
+        {
+            cells[image.at<int32_t>(i,j)].push_back(cv::Point(i,j));
+        }
+    }
+}
+
+void Preprocessing::findCentroids(std::vector<cv::Point>* cells,cv::Point* centroids,int len)
+{
+    for(size_t i = 0; i < len; i++)
+    {
+        int avgX = 0;
+        int avgY = 0;
+        for (size_t j = 0; j < cells[i].size(); j++)
+        {
+            avgX += cells[i][j].x;
+            avgY += cells[i][j].y;
+        }
+        centroids[i] = cv::Point(avgX/cells[i].size(),avgY/cells[i].size());      
+    }
 }

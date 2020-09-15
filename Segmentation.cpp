@@ -21,20 +21,13 @@ void Segmentation::segment()
 {   
     
     Preprocessing p;
-    cv::Mat mask = p.applyThreshold(image,-2,1); //easy: (image,0,1); medium:(image,-2,1); hard:(image,19,1)
+    cv::Mat mask = p.applyThreshold(image,0,1); //easy: (image,0,1); medium:(image,-2,1); hard:(image,19,1)
     mask.convertTo(mask,CV_8U);
     //p.removeBoundary(image,19,0);
     std::cout << "Mask image created..." << std::endl;
-    p.removeBoundary(image,-2); //16 for easy
+    p.removeBoundary(image,0); //16 for easy
     std::cout << "Boundary removed..." << std::endl;
-    //hard
-    /*for (size_t i = 0; i < image.rows; i++)
-    {
-        for (size_t j = 0; j < image.cols; j++)
-        {
-            //image.at<float>(i,j) = image.at<float>(i,j) * image.at<float>(i,j) * image.at<float>(i,j);
-        }
-    }*/
+    //image = image*2;
 
     cv::Mat localMax = p.findLocalMax(image);
     //cv::bitwise_and(mask, localMax, localMax);
@@ -55,7 +48,26 @@ void Segmentation::segment()
     cv::normalize(image, image_8U, 0, 255, cv::NORM_MINMAX);
     image_8U.convertTo(image_8U,CV_8U);
     //cv::Mat thresh = p.applyThreshold(image_8U);
-    //cv::imwrite("thresh.tif",thresh);
+
+    //test
+    /*cv::Mat gt = cv::imread("data/gt.tif",cv::IMREAD_UNCHANGED);
+    for (size_t i = 0; i < gt.rows; i++)
+    {
+        for (size_t j = 0; j < gt.cols; j++)
+        {
+            //cv::Vec4b pix = gt.at<cv::Vec4b>(i,j);
+            if(gt.at<uint8_t>(i,j) == 255)
+            {
+                image_8U.at<uint8_t>(i,j) = 255;
+            }
+        }
+    }*/
+    
+
+    //endtest
+    //cv::imwrite(file+"_8UC1.tif",image_8U);
+    image_8U = p.applyFilterGausian(image_8U);
+    cv::imwrite(file+"_8UC1.tif",image_8U);
 
     cv::Mat slicmask, result;
     int min_element_size = 25;
@@ -70,6 +82,7 @@ void Segmentation::segment()
     std::cout << slic->getNumberOfSuperpixels() << std::endl;
     slic->getLabels(ming);
 
+    //cv::imwrite("labels.tif",ming);
 
     cv::Mat slicOut = image_8U;
     cv::cvtColor(image_8U,slicOut,cv::COLOR_GRAY2RGB);
@@ -157,13 +170,15 @@ void Segmentation::segment()
         if (cells.find(i) == cells.end())
         {
             float var = p.variance(mapping[i]);
-            if (var > 30)
+            if (var > 25)
             {
                 cv::Point maxPos = p.getMaxPosition(mapping[i],coord[i]);
-                localMax.at<uint8_t>(maxPos.x,maxPos.y) = 255;
+                //localMax.at<uint8_t>(maxPos.x,maxPos.y) = 255;
             }          
         }
     }
+
+    
 
     cv::Mat image_8UC3;
     cv::cvtColor(image_8U,image_8UC3,cv::COLOR_GRAY2RGB);
@@ -199,6 +214,9 @@ void Segmentation::segment()
         }
     }
     cv::imwrite("testSlicMask.tif",testMask);
+    cv::Mat edges = p.findEdges(image_8U);
+    cv::imwrite("edges.tif",edges);
+
 
     cv::Mat newImg = image_8UC3.clone();
     for (size_t i = 0; i < newImg.rows; i++)
@@ -212,6 +230,39 @@ void Segmentation::segment()
         }
     }
     
+    
+
+    //Region grow
+/*
+    cv::Mat regionGrow;
+    cv::cvtColor(newImg,regionGrow,cv::COLOR_RGB2GRAY);
+    for (size_t i = 0; i < localMax.rows; i++)
+    {
+        for (size_t j = 0; j < localMax.cols; j++)
+        {
+            if(localMax.at<uint8_t>(i,j) == 255 && regionGrow.at<uint8_t>(i,j) != 0)
+            {
+                p.regionGrow(regionGrow,i,j,255);
+            }       
+        }
+    }
+    cv::imwrite("regionGrow.tif",regionGrow);
+    cv::Mat regionGrowColour = cv::Mat::zeros(image_8U.size(),CV_8UC4);
+    //cv::cvtColor(newImg,regionGrowColour,cv::COLOR_RGB2RGBA);
+    for (size_t i = 0; i < localMax.rows; i++)
+    {
+        for (size_t j = 0; j < localMax.cols; j++)
+        {
+            if(regionGrow.at<uint8_t>(i,j) == 255)
+            {
+                regionGrowColour.at<cv::Vec4b>(i,j) = cv::Vec4b(0,0,255,100);
+            }       
+        }
+    }
+    cv::imwrite("regionGrowColour.tif",regionGrowColour);
+
+*/
+    //End region grow
     
 
     cv::imwrite("markers.tif",markers);
@@ -260,7 +311,7 @@ void Segmentation::segment()
     cv::namedWindow("Final Result",cv::WINDOW_NORMAL);
     cv::resizeWindow("Final Result", 1920,1080);
     cv::imshow("Final Result", dst);
-    cv::waitKey(0);
+    //cv::waitKey(0);
 
     /*cv::Mat otsu = p.applyThreshold(image_8U);
     cv::Mat dist = p.applyDistanceTranform(otsu);
