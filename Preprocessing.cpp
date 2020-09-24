@@ -226,6 +226,12 @@ cv::Mat Preprocessing::findEdges(cv::Mat& image)
     return edges;
 }
 
+/**
+ * @brief Acquire the index of all neighbours of a cell.
+ * 
+ * @param image 
+ * @param neighbours 
+ */
 void Preprocessing::findNeighbours(cv::Mat& image, std::vector<int>* neighbours)
 {
     for (size_t i = 1; i < image.rows-1; i++)

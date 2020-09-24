@@ -14,7 +14,7 @@ class Preprocessing
         void regulateImage(cv::Mat& image, int num);
     public:
         Preprocessing();
-        ~Preprocessing();
+        ~Preprocessing();  
         void removeBoundary(cv::Mat& image, int min);
         void removeBoundary(cv::Mat& image, int t, int set);
         cv::Mat createMask(cv::Mat& image, uint8_t t, uint8_t set);

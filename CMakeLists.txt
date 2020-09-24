@@ -6,7 +6,7 @@ enable_testing()
 
 find_package(OpenCV REQUIRED)
 
-add_executable(CSC4002W_Project main.cpp Image.cpp Preprocessing.cpp Segmentation.cpp Watershed.cpp)
+add_executable(CSC4002W_Project main.cpp Image.cpp Preprocessing.cpp Segmentation.cpp Watershed.cpp Evaluation.cpp)
 
 target_link_libraries(CSC4002W_Project ${OpenCV_LIBS})
 
