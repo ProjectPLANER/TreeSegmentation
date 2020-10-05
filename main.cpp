@@ -1,38 +1,14 @@
+#include <string>
+#include <set>
+#include <iostream>
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
-#include <string>
-#include <iostream>
-#include <set>
 #include "Segmentation.h"
-#include "Image.h"
-#include "Watershed.h"
 
-int main(int, char**) 
+int main(int argc, char* argv[]) 
 {
-	//std::string file = "trim_easy";
-	//std::string file = "trim_medium";
-	//std::string file = "trim_hard";
-	//std::string file = "simpleHill4";
-	//std::string file = "easyHill";
-	//std::string file = "flat";
-	//std::string file = "steps";
-	//std::string file = "bigTrees";
-	//std::string file = "sameHeights";
-	//std::string file = "spacedTrees";
-	//std::string file = "touching2";
-	//std::string file = "circleTree2";
-	//std::string file = "flatOverlapRounded";
-	//std::string file = "1";
-	//std::string file = "2";
-	//std::string file = "3";
-	//std::string file = "hillsGradual";
-	//std::string file = "hillsSteep";
-	//std::string file = "valleys";
-	//std::string file = "contoursSteep";
-	//std::string file = "noisy";
-
-	std::string maps[34];
+	std::string maps[37];
 	maps[0] = "contourHill";
 	maps[1] = "contourHillEasy";
 	maps[2] = "contourHillJoin";
@@ -68,33 +44,65 @@ int main(int, char**)
 	maps[31] = "hillsSmallEasy";
 	maps[32] = "steepSmall";
 	maps[33] = "steepSmallEasy";
+
+	maps[34] = "trim_easy";
+	maps[35] = "trim_medium";
+	maps[36] = "trim_hard";
 	
-    cv::Mat image;
-	for (size_t i = 0; i < 20; i++)
+    /*cv::Mat image;
+	for (size_t i = 8; i < 9; i++)
 	{
 		std::cout << maps[i] << std::endl;
-		image = cv::imread("data/"+maps[i]+"/final.tif",cv::IMREAD_UNCHANGED);
+		image = cv::imread("../data/"+maps[i]+"/final.tif",cv::IMREAD_UNCHANGED);
 		if(!image.data)
 		{
 			std::cout << "Error: Could not open or locate the file." << std::endl;
         	return -1;
 		}
-    //Watershed w(image);
-    //w.applyWatershed();
-	Segmentation s(image,maps[i]);
+
+	Segmentation s(image,maps[i],0,28,25);
 	s.segment();
-	}
+	}*/
 	
-	/*std::cout << file << std::endl;
-    image = cv::imread("data/"+file+".tif",cv::IMREAD_UNCHANGED);
-	if(!image.data)
+	if(argc < 5 || argc > 6)
 	{
-		std::cout << "Error: Could not open or locate the file." << std::endl;
-        return -1;
+		std::cout << "Please enter the correct arguments" << std::endl;
+		std::cout << "Format: -t(optional) <fileNumber> <minimumPixelValue> <SLICSize> <localMaxWindowSize>" << std::endl;
+		return -1; 
 	}
-    //Watershed w(image);
-    //w.applyWatershed();
-	Segmentation s(image,file);
-	s.segment();*/
-	return 0;
+
+	if(argc == 5)
+	{
+		std::cout << maps[std::atoi(argv[1])] << std::endl;
+		cv::Mat image = cv::imread("../data/"+maps[std::atoi(argv[1])]+"/final.tif",cv::IMREAD_UNCHANGED);
+		if(!image.data)
+		{
+			std::cout << "Error: Could not open or locate the file." << std::endl;
+        	return -1;
+		}
+		Segmentation s(image, maps[std::atoi(argv[1])], std::atoi(argv[2]), std::atoi(argv[3]), std::atoi(argv[4]));
+		s.segment(false);
+		return 0;
+	}
+
+	if(argc == 6)
+	{
+		if(std::string(argv[1]) != "-t")
+		{
+			std::cout << "Please enter the correct arguments" << std::endl;
+			std::cout << "Format: -t(optional) <fileNumber> <minimumPixelValue> <SLICSize> <localMaxWindowSize>" << std::endl;
+			return -1; 
+		}
+
+		std::cout << maps[std::atoi(argv[2])] << std::endl;
+		cv::Mat image = cv::imread("../data/"+maps[std::atoi(argv[2])]+"/final.tif",cv::IMREAD_UNCHANGED);
+		if(!image.data)
+		{
+			std::cout << "Error: Could not open or locate the file." << std::endl;
+        	return -1;
+		}
+		Segmentation s(image, maps[std::atoi(argv[2])], std::atoi(argv[3]), std::atoi(argv[4]), std::atoi(argv[5]));
+		s.segment(true);
+		return 0;
+	}
 }

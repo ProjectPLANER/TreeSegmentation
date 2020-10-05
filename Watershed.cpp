@@ -1,10 +1,20 @@
+/**
+ * @file Watershed.cpp
+ * @author Lynolan Moodley (mdllyn007@myuct.ac.za)
+ * @brief \deprecated The watershed definition file, from the OpenCV repository: https://github.com/opencv/opencv. Experimented on to alter the watershed implementation. Not in use.
+ * @version 0.1
+ * @date 2020-10-05
+ * 
+ * @copyright Copyright (c) 2020
+ * 
+ */
+
+#include <unordered_map>
+#include <iostream>
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include "Watershed.h"
-#include "Preprocessing.h"
-#include <unordered_map>
-#include <iostream>
 
 Watershed::Watershed() {}
 
@@ -614,4 +624,3 @@ void Watershed::water( cv::Mat& src, cv::Mat& markers ) //CV_32S,CV_32S
         }
     }
 }
-

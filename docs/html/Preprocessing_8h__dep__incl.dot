@@ -1,0 +1,11 @@
+digraph "Preprocessing.h"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="Preprocessing.h",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip="The preprocessing header, which declares all methods requires to process DEMs before segmentaton can ..."];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="Preprocessing.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$Preprocessing_8cpp.html",tooltip="The preprocessing definition file, which defines all methods requires to process DEMs before segmenta..."];
+  Node1 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="Segmentation.cpp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$Segmentation_8cpp.html",tooltip="The segmentation definition file, which defines the methods to be used when segmenting DEMs."];
+}

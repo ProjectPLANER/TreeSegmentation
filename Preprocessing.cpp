@@ -1,18 +1,50 @@
+/**
+ * @file Preprocessing.cpp
+ * @author Lynolan Moodley (mdllyn007@myuct.ac.za)
+ * @brief The preprocessing definition file, which defines all methods requires to process DEMs before segmentaton can take place.
+ * @version 0.1
+ * @date 2020-10-05
+ * 
+ * @copyright Copyright (c) 2020
+ * 
+ */
+
+#include <cmath>
+#include <iostream>
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include "Preprocessing.h"
-#include <cmath>
-#include <iostream>
 
+/**
+ * @brief Construct a new Preprocessing:: Preprocessing object
+ * 
+ */
 Preprocessing::Preprocessing() {}
+
+/**
+ * @brief Destroy the Preprocessing:: Preprocessing object
+ * 
+ */
 Preprocessing::~Preprocessing() {}
 
-void Preprocessing::regulateImage(cv::Mat& image, int num)
+/**
+ * @brief Scales an image to eliminate negative pixel values.
+ * 
+ * @param image An input image
+ * @param scaleFactor The number by which to scale
+ */
+void Preprocessing::regulateImage(cv::Mat& image, int scaleFactor)
 {
-    image = image + abs(num);
+    image = image + abs(scaleFactor);
 }
 
+/**
+ * @brief Removes the null values that may occur in DEMs that are not rectangular.
+ * 
+ * @param image An input image
+ * @param min The minimum value in the image
+ */
 void Preprocessing::removeBoundary(cv::Mat& image, int min)
 {
     if (min < 0)
@@ -32,29 +64,46 @@ void Preprocessing::removeBoundary(cv::Mat& image, int min)
     }
 }
 
-void Preprocessing::removeBoundary(cv::Mat& image, int t, int set)
+/**
+ * @brief \deprecated Removes the null values that may occur in DEMs that are not rectangular.
+ * 
+ * @param image An input image
+ * @param limit The threshold of the image
+ * @param newValue The new value to replace null values
+ */
+void Preprocessing::removeBoundary(cv::Mat& image, int limit, int newValue)
 {
+    //Experimental - not in use
+
     for ( int i = 0; i < image.rows; i++ ) 
     {
         for ( int j = 0; j < image.cols; j++ )
         {
-            if(image.at<float>(i,j) < t)
+            if(image.at<float>(i,j) < limit)
             {
-                image.at<float>(i,j) = set;
+                image.at<float>(i,j) = newValue;
             }
         }
     }
 }
 
-
-cv::Mat Preprocessing::createMask(cv::Mat& image, uint8_t t, uint8_t set)
+/**
+ * @brief \deprecated Returns a binary mask of an image where pixels with a value equal to or above the limit are set to 1 otherwise, they are set to 0.
+ * 
+ * @param image An input image
+ * @param limit The mask limit
+ * @return cv::Mat 
+ */
+cv::Mat Preprocessing::createMask(cv::Mat& image, uint8_t limit)
 {
+    //Experimental - not in use
+
     cv::Mat mask = cv::Mat::ones(image.size(),image.type());
     for ( int i = 0; i < image.rows; i++ ) 
     {
         for ( int j = 0; j < image.cols; j++ )
         {
-            if(image.at<uint8_t>(i,j) <= t)
+            if(image.at<uint8_t>(i,j) <= limit)
             {
                 mask.at<uint8_t>(i,j) = 0;
             }
@@ -63,13 +112,12 @@ cv::Mat Preprocessing::createMask(cv::Mat& image, uint8_t t, uint8_t set)
     return mask;
 }
 
-cv::Mat Preprocessing::applyFilter(cv::Mat& image)
-{
-    cv::Mat imageFiltered;
-    cv::bilateralFilter(image,imageFiltered,9,75,75);
-    return imageFiltered;
-}
-
+/**
+ * @brief Returns the result after applying a Gaussian filter to the image inputted.
+ * 
+ * @param image An input image
+ * @return cv::Mat 
+ */
 cv::Mat Preprocessing::applyFilterGausian(cv::Mat& image)
 {
     cv::Mat imageFiltered;
@@ -77,146 +125,307 @@ cv::Mat Preprocessing::applyFilterGausian(cv::Mat& image)
     return imageFiltered;
 }
 
-cv::Mat Preprocessing::applyThreshold(cv::Mat& image)
+/**
+ * @brief \deprecated Returns the result after applying a bilateral filter to the image inputted.
+ * 
+ * @param image An input image
+ * @return cv::Mat 
+ */
+cv::Mat Preprocessing::applyFilterBilateral(cv::Mat& image)
 {
+    //Experimental - not in use
+
+    cv::Mat imageFiltered;
+    cv::bilateralFilter(image,imageFiltered,5,75,75);
+    return imageFiltered;
+}
+
+/**
+ * @brief \deprecated Returns the result after applying an Otsu threshold operation on an image to obtain a binary image where pixels values above the local limit (which is calculated) are set to maxValue and values below the local limit are set to 0.
+ * 
+ * @param image An input image
+ * @return cv::Mat 
+ */
+cv::Mat Preprocessing::applyThreshold(cv::Mat& image, int maxValue)
+{
+    //Experimental - not in use
+
     cv::Mat imageThresh;
     cv::threshold(image,imageThresh,0,255,cv::THRESH_BINARY | cv::THRESH_OTSU);
     return imageThresh;
 }
 
-cv::Mat Preprocessing::applyThreshold(cv::Mat& image, int t, int max)
+/**
+ * @brief Returns the result after applying a threshold operation on an image to obtain a binary image where pixels values above the limit are set to maxValue and values below the limit are set to 0.
+ * 
+ * @param image An input image
+ * @param limit The threshold limit
+ * @param maxValue The maximum value of the thresholded image
+ * @return cv::Mat 
+ */
+cv::Mat Preprocessing::applyThreshold(cv::Mat& image, int limit, int maxValue)
 {
     cv::Mat imageThresh;
-    cv::threshold(image,imageThresh,t,max,cv::THRESH_BINARY);
+    cv::threshold(image, imageThresh, limit, maxValue, cv::THRESH_BINARY);
     return imageThresh;
 }
 
+/**
+ * @brief \deprecated Returns the result after applying a distance transform operation to the image inputted.
+ * 
+ * @param image An input image
+ * @return cv::Mat 
+ */
 cv::Mat Preprocessing::applyDistanceTranform(cv::Mat& image)
 {
+    //Experimental - not in use
+
     cv::Mat dist;
     cv::distanceTransform(image, dist, cv::DIST_C, 3);
     return dist;
 }
 
-cv::Mat Preprocessing::findLocalMax(cv::Mat& image)
+/**
+ * @brief Returns the result after identifying all significant local maxima in the image inputted.
+ * 
+ * @param image An input image
+ * @param windowSize The 
+ * @return cv::Mat 
+ */
+cv::Mat Preprocessing::findLocalMax(cv::Mat& image, int windowSize)
 {
     cv::Mat max;
-    cv::dilate(image, max, cv::getStructuringElement(cv::MORPH_RECT, cv::Size (28, 28))); //30x30 //25
+    cv::dilate(image, max, cv::getStructuringElement(cv::MORPH_RECT, cv::Size (25, 25))); //30x30 //25
     cv::Mat res;
     cv::compare(image, max, res,cv::CMP_GE);
     
-    cv::imwrite("max.tif",res);
+    //cv::imwrite("max.tif",res);
     return res;
 }
 
-// A recursive function to replace previous color 'prevC' at  '(x, y)'  
-// and all surrounding pixels of (x, y) with new color 'newC' and 
-void Preprocessing::floodFillUtil(cv::Mat& image, int x, int y, int prevC, int newC) 
+/**
+ * @brief \deprecated Returns the result after identifying all local maxima in the image inputted.
+ * 
+ * @param image An input image
+ * @return cv::Mat 
+ */
+cv::Mat Preprocessing::findLocalMax(cv::Mat& image)
+{
+    //Experimental - not in use
+    
+    bool** rows = new bool*[image.rows];
+    rows[0] = new bool[image.cols];
+    rows[0][0] = (image.at<float>(0,0) >= image.at<float>(0,1) && image.at<float>(0,0) >= image.at<float>(1,0)) ? true : false;
+    for (int j = 1; j < image.cols-1; j++)
+    {
+        rows[0][j] = (image.at<float>(0,j) >= image.at<float>(0,j-1) && image.at<float>(0,j) >= image.at<float>(0,j+1) && image.at<float>(0,j) >= image.at<float>(1,j)) ? true : false;
+    }
+    rows[0][image.cols-1] = (image.at<float>(0,image.cols-1) >= image.at<float>(0,image.cols-2) && image.at<float>(0,image.cols-1) >= image.at<float>(1,image.cols-1)) ? true : false;
+    
+    for (int i = 1; i < image.rows-1; i++)
+    {
+        rows[i] = new bool[image.cols];
+        rows[i][0] = (image.at<float>(i,0) >= image.at<float>(i,1) && image.at<float>(i,0) >= image.at<float>(i-1,0) && image.at<float>(i,0) >= image.at<float>(i+1,0)) ? true : false;
+        for (int j = 1; j < image.cols-1; j++)
+        {
+            rows[i][j] = (image.at<float>(i,j) >= image.at<float>(i,j-1) && image.at<float>(i,j) >= image.at<float>(i,j+1) && image.at<float>(i,j) >= image.at<float>(i-1,j) && image.at<float>(i,j) >= image.at<float>(i+1,j)) ? true : false;
+        }
+        rows[i][image.cols-1] = (image.at<float>(i,image.cols-1) > image.at<float>(i,image.cols-2) && image.at<float>(i,image.cols-1) > image.at<float>(i-1,image.cols-1) && image.at<float>(i,image.cols-1) > image.at<float>(i+1,image.cols-1)) ? true : false;
+    }
+    
+    rows[image.rows-1] = new bool[image.cols];
+    rows[image.rows-1][0] = (image.at<float>(image.rows-1,0) >= image.at<float>(image.rows-1,1) && image.at<float>(image.rows-1,0) >= image.at<float>(image.rows-2,0)) ? true : false;
+    for (int j = 1; j < image.cols-1; j++)
+    {
+        rows[image.rows-1][j] = (image.at<float>(image.rows-1,j) >= image.at<float>(image.rows-1,j-1) && image.at<float>(image.rows-1,j) >= image.at<float>(image.rows-1,j+1) && image.at<float>(image.rows-1,j) >= image.at<float>(image.rows-2,j)) ? true : false;
+    }
+    rows[image.rows-1][image.cols-1] = (image.at<float>(image.rows-1,image.cols-1) >= image.at<float>(image.rows-1,image.cols-2) && image.at<float>(image.rows-1,image.cols-1) >= image.at<float>(image.rows-2,image.cols-1)) ? true : false;
+    
+    cv::Mat localMax = cv::Mat::zeros(image.size(),CV_8U);
+    for (int i = 0; i < image.rows; i++)
+    {
+        for (int j = 0; j < image.cols; j++)
+        {
+            if (rows[i][j])
+            {
+                localMax.at<uint8_t>(i,j) = 255;
+            }        
+        }
+        delete[] rows[i];
+    }
+    delete[] rows;
+    return localMax;
+}
+
+/**
+ * @brief \deprecated Performs the flood-fill algorithm on an image, by recursing through pixels.
+ * 
+ * @param image An input image
+ * @param x coordinate of the pixel
+ * @param y coordinate of the pixel
+ * @param prevValue the original value of the pixel
+ * @param newValue the new value of the pixel
+ */
+void Preprocessing::floodFillUtil(cv::Mat& image, int x, int y, int prevValue, int newValue) 
 { 
-    // Base cases 
+    //Experimental - not in use
+
+    //Base cases 
     if (x < 0 || x >= image.rows || y < 0 || y >= image.cols) 
         return; 
-    if (image.at<int32_t>(x,y) != prevC) 
+    if (image.at<int32_t>(x,y) != prevValue) 
         return; 
-    if (image.at<int32_t>(x,y) == newC)  
+    if (image.at<int32_t>(x,y) == newValue)  
         return;  
   
-    // Replace the color at (x, y) 
-    image.at<int32_t>(x,y) = newC; 
+    //Replace the color at (x, y) 
+    image.at<int32_t>(x,y) = newValue; 
   
-    // Recur for north, east, south and west 
-    floodFillUtil(image, x+1, y, prevC, newC); 
-    floodFillUtil(image, x-1, y, prevC, newC); 
-    floodFillUtil(image, x, y+1, prevC, newC); 
-    floodFillUtil(image, x, y-1, prevC, newC); 
+    //Recur for north, east, south and west 
+    floodFillUtil(image, x+1, y, prevValue, newValue); 
+    floodFillUtil(image, x-1, y, prevValue, newValue); 
+    floodFillUtil(image, x, y+1, prevValue, newValue); 
+    floodFillUtil(image, x, y-1, prevValue, newValue); 
 } 
   
-// It mainly finds the previous color on (x, y) and 
-// calls floodFillUtil() 
-void Preprocessing::floodFill(cv::Mat& image, int x, int y, int newC) 
-{ 
-    int prevC = image.at<int32_t>(x,y); 
-    floodFillUtil(image, x, y, prevC, newC); 
+/**
+ * @brief \deprecated Performs a flood-fill operation an on image. Calls floodFillUtil(cv::Mat& image, int x, int y, uint8_t prevValue, uint8_t newValue)
+ * 
+ * @param image An input image
+ * @param x coordinate of the start of the flood-fill operation
+ * @param y coordinate of the start of the flood-fill operation
+ * @param newValue the new value of the pixel
+ */
+void Preprocessing::floodFill(cv::Mat& image, int x, int y, int newValue) 
+{
+    //Experimental - not in use
+
+    int prevValue = image.at<int32_t>(x,y); 
+    floodFillUtil(image, x, y, prevValue, newValue); 
 }
 
-void Preprocessing::regionGrowUtil(cv::Mat& image, int x, int y, uint8_t prevC, uint8_t newC) 
+/**
+ * @brief \deprecated A flood-fill algortihm that performs the region growing operation on an image, by recursing through pixels.
+ * 
+ * @param image An input image
+ * @param x coordinate of the pixel
+ * @param y coordinate of the pixel
+ * @param prevValue the original value of the pixel
+ * @param newValue the new value of the pixel
+ */
+void Preprocessing::regionGrowUtil(cv::Mat& image, int x, int y, uint8_t prevValue, uint8_t newValue) 
 { 
-    // Base cases 
+    //Experimental - not in use
+
+    //Base cases 
     if (x < 0 || x >= image.rows || y < 0 || y >= image.cols) 
         return; 
-    if (image.at<uint8_t>(x,y) == newC)  
+    if (image.at<uint8_t>(x,y) == newValue)  
         return;
-    uint8_t xx = image.at<uint8_t>(x,y);
-    uint8_t prev = prevC;
-    if ((prevC - image.at<uint8_t>(x,y)) > 30) //>15
-        return; 
-      
+    if ((prevValue - image.at<uint8_t>(x,y)) > 30)
+        return;    
   
-    // Replace the color at (x, y) 
-    image.at<uint8_t>(x,y) = newC; 
+    //Replace the color at (x, y) 
+    image.at<uint8_t>(x,y) = newValue; 
   
-    // Recur for north, east, south and west 
-    regionGrowUtil(image, x+1, y, prevC, newC); 
-    regionGrowUtil(image, x-1, y, prevC, newC); 
-    regionGrowUtil(image, x, y+1, prevC, newC); 
-    regionGrowUtil(image, x, y-1, prevC, newC); 
+    //Recur for north, east, south and west 
+    regionGrowUtil(image, x+1, y, prevValue, newValue); 
+    regionGrowUtil(image, x-1, y, prevValue, newValue); 
+    regionGrowUtil(image, x, y+1, prevValue, newValue); 
+    regionGrowUtil(image, x, y-1, prevValue, newValue); 
 } 
   
-// It mainly finds the previous color on (x, y) and 
-// calls floodFillUtil() 
-void Preprocessing::regionGrow(cv::Mat& image, int x, int y, uint8_t newC) 
+/**
+ * @brief \deprecated Performs a region growing operation an on image. Calls regionGrowUtil(cv::Mat& image, int x, int y, uint8_t prevValue, uint8_t newValue)
+ * 
+ * @param image An input image
+ * @param x coordinate of the start of the region growing operation
+ * @param y coordinate of the start of the region growing operation
+ * @param newValue the new value of affected pixels
+ */
+void Preprocessing::regionGrow(cv::Mat& image, int x, int y, uint8_t newValue) 
 { 
-    uint8_t prevC = image.at<uint8_t>(x,y); 
-    regionGrowUtil(image, x, y, prevC, newC); 
+    //Experimental - not in use
+
+    uint8_t prevValue = image.at<uint8_t>(x,y); 
+    regionGrowUtil(image, x, y, prevValue, newValue); 
 }
 
-float Preprocessing::variance(std::vector<uint8_t> cell)
+/**
+ * @brief Returns the variance from a list of pixels.
+ * 
+ * @param pixelValues An input list of pixel values
+ * @return float 
+ */
+float Preprocessing::getVariance(std::vector<uint8_t> pixelValues)
 {
     float mean = 0;
-    for (size_t i = 0; i < cell.size(); i++)
+    for (size_t i = 0; i < pixelValues.size(); i++)
     {
-        mean += cell[i];
+        mean += pixelValues[i];
     }
-    mean /= cell.size();
+    mean /= pixelValues.size();
     
     float var = 0;
-    for(int i = 0; i < cell.size(); i++ )
+    for(int i = 0; i < pixelValues.size(); i++ )
     {
-        var += (cell[i] - mean) * (cell[i] - mean);
+        var += (pixelValues[i] - mean) * (pixelValues[i] - mean);
     }
-    var /= (cell.size()-1);
+    var /= (pixelValues.size()-1);
     return var;
 }
 
-uint8_t Preprocessing::getMax(std::vector<uint8_t> cell)
+/**
+ * @brief \deprecated Returns the highest value from a list of pixels.
+ * 
+ * @param pixelValues An input list of pixel values
+ * @return uint8_t 
+ */
+uint8_t Preprocessing::getMax(std::vector<uint8_t> pixelValues)
 {
-    uint8_t max = 0;
-    for (size_t i = 0; i < cell.size(); i++)
+    //Experimental - not in use
+
+    uint8_t maxValue = 0;
+    for (size_t i = 0; i < pixelValues.size(); i++)
     {
-        if(max < cell[i])
-            max = cell[i];
+        if(maxValue < pixelValues[i])
+            maxValue = pixelValues[i];
     }
-    return max;
+    return maxValue;
 }
 
-cv::Point Preprocessing::getMaxPosition(std::vector<uint8_t> val,std::vector<cv::Point> coord)
+/**
+ * @brief Returns the coordinates of the pixel with the highest value.
+ * 
+ * @param pixelValues An input list of pixel values
+ * @param pixelCoord An input list of corresponding pixel coordinates
+ * @return cv::Point 
+ */
+cv::Point Preprocessing::getMaxPosition(std::vector<uint8_t> pixelValues, std::vector<cv::Point> pixelCoord)
 {
-    uint8_t max = 0;
-    cv::Point maxPos;
-    for (size_t i = 0; i < val.size(); i++)
+    uint8_t maxValue = 0;
+    cv::Point maxCoord;
+    for (size_t i = 0; i < pixelValues.size(); i++)
     {
-        if(max < val[i])
+        if(maxValue < pixelValues[i])
         {
-            max = val[i];
-            maxPos = coord[i];
-        }
-            
+            maxValue = pixelValues[i];
+            maxCoord = pixelCoord[i];
+        }       
     }
-    return maxPos;
+    return maxCoord;
 }
 
+/**
+ * @brief \deprecated Returns a binary image with edges detected (displayed as white pixels) from an image according to the Canny algortihm.
+ * 
+ * @param image An input image
+ * @return cv::Mat 
+ */
 cv::Mat Preprocessing::findEdges(cv::Mat& image)
 {
+    //Experimental - not in use
+
     cv::Mat image1 = image.clone();
     image1.convertTo(image1,CV_16SC1);
     cv::Mat image2 = image1.clone();
@@ -227,10 +436,10 @@ cv::Mat Preprocessing::findEdges(cv::Mat& image)
 }
 
 /**
- * @brief Acquire the index of all neighbours of a cell.
+ * @brief Acquires the index of all neighbours of a cluster.
  * 
- * @param image 
- * @param neighbours 
+ * @param image An input image of type CV_32S containing clusters
+ * @param neighbours An output vector containing the ID of every neighbour for every cluster
  */
 void Preprocessing::findNeighbours(cv::Mat& image, std::vector<int>* neighbours)
 {
@@ -258,29 +467,43 @@ void Preprocessing::findNeighbours(cv::Mat& image, std::vector<int>* neighbours)
     }
 }
 
-void Preprocessing::sortCells(cv::Mat& image, std::vector<cv::Point>* cells)
+/**
+ * @brief Identifies all pixels in a cluster and arranges them in an array.
+ * 
+ * @param image An input image of clusters
+ * @param clusters An output array of clusters
+ */
+void Preprocessing::sortCells(cv::Mat& image, std::vector<cv::Point>* clusters)
 {
-
     for (int i = 0; i < image.rows; i++)
     {
         for (int j = 0; j < image.cols; j++)
         {
-            cells[image.at<int32_t>(i,j)].push_back(cv::Point(i,j));
+            clusters[image.at<int32_t>(i,j)].push_back(cv::Point(i,j));
         }
     }
 }
 
-void Preprocessing::findCentroids(std::vector<cv::Point>* cells,cv::Point* centroids,int len)
+/**
+ * @brief \deprecated Identifies the centroid pixel of every cluster in an image.
+ * 
+ * @param clusters An input image containing the clusters
+ * @param centroids An output list of centroids
+ * @param numCentroids The number of clusters in the image
+ */
+void Preprocessing::findCentroids(std::vector<cv::Point>* clusters, cv::Point* centroids, int numClusters)
 {
-    for(size_t i = 0; i < len; i++)
+    //Experimental - not in use
+
+    for(size_t i = 0; i < numClusters; i++)
     {
         int avgX = 0;
         int avgY = 0;
-        for (size_t j = 0; j < cells[i].size(); j++)
+        for (size_t j = 0; j < clusters[i].size(); j++)
         {
-            avgX += cells[i][j].x;
-            avgY += cells[i][j].y;
+            avgX += clusters[i][j].x;
+            avgY += clusters[i][j].y;
         }
-        centroids[i] = cv::Point(avgX/cells[i].size(),avgY/cells[i].size());      
+        centroids[i] = cv::Point(avgX/clusters[i].size(),avgY/clusters[i].size());      
     }
 }
