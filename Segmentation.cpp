@@ -1,6 +1,5 @@
 /**
  * @file Segmentation.cpp
- * @author Lynolan Moodley (mdllyn007@myuct.ac.za)
  * @brief The segmentation definition file, which defines the methods to be used when segmenting DEMs.
  * @version 0.1
  * @date 2020-10-05

@@ -1,6 +1,5 @@
 /**
  * @file Evaluation.cpp
- * @author Lynolan Moodley (mdllyn007@myuct.ac.za)
  * @brief The evaluation definition file, which defines all methods requires to evaluate tree masks after segmentation has taken place.
  * @version 0.1
  * @date 2020-10-05
@@ -222,6 +221,7 @@ void Evaluation::getIOUPerTree(cv::Mat& groundTruth_mask, cv::Mat& groundTruth_c
 
     for (int i = 0; i < IOU.size(); i++)
     {
+        std::cout << bestCluster[i] << ": " << IOU[i] << std::endl;
         mean += IOU[i];
         if (IOU[i] < 0.1)
         {

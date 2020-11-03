@@ -1,6 +1,5 @@
 /**
  * @file Watershed.h
- * @author Lynolan Moodley (mdllyn007@myuct.ac.za)
  * @brief The watershed header, from the OpenCV repository: https://github.com/opencv/opencv
  * @version 0.1
  * @date 2020-10-05

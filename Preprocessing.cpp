@@ -1,6 +1,5 @@
 /**
  * @file Preprocessing.cpp
- * @author Lynolan Moodley (mdllyn007@myuct.ac.za)
  * @brief The preprocessing definition file, which defines all methods requires to process DEMs before segmentaton can take place.
  * @version 0.1
  * @date 2020-10-05

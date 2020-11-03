@@ -1,8 +1,3 @@
-PLANER: Tree Segmentation
-Lynolan Moodley
-CSC4002W
-=========================
-
 Project Content
 ===============
 ~ build/                CMake build files

@@ -1,6 +1,5 @@
 /**
  * @file Watershed.cpp
- * @author Lynolan Moodley (mdllyn007@myuct.ac.za)
  * @brief \deprecated The watershed definition file, from the OpenCV repository: https://github.com/opencv/opencv. Experimented on to alter the watershed implementation. Not in use.
  * @version 0.1
  * @date 2020-10-05

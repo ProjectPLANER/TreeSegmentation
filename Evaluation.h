@@ -1,6 +1,5 @@
 /**
  * @file Evaluation.h
- * @author Lynolan Moodley (mdllyn007@myuct.ac.za)
  * @brief The evaluation header, which declares all methods requires to evaluate tree masks after segmentation has taken place.
  * @version 0.1
  * @date 2020-10-05
